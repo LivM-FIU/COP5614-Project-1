@@ -66,6 +66,7 @@ extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
 extern void ElevatorTest(int numFloors, int numPersons);
 extern void Ping(void);
+extern void LockTest(void);
 
 //----------------------------------------------------------------------
 // main
@@ -107,7 +108,8 @@ int main(int argc, char **argv)
 #ifdef HW1_SEMAPHORES
     ThreadTest(testnum);
 #else
-	Ping();
+	// Ping();
+	LockTest();
     //ThreadTest();   // Calls the default ThreadTest() otherwise
 #endif
 #endif
