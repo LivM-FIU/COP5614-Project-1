@@ -65,6 +65,7 @@ extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
 extern void ElevatorTest(int numFloors, int numPersons);
+extern void Ping(void);
 
 //----------------------------------------------------------------------
 // main
@@ -84,8 +85,6 @@ int main(int argc, char **argv)
 {
     int argCount;			// the number of arguments 
 					// for a particular command
-	int persons;
-	int floor;				
 
     DEBUG('t', "Entering main");
     (void) Initialize(argc, argv);
@@ -99,13 +98,6 @@ int main(int argc, char **argv)
         testnum = atoi(argv[1]);
         argCount++;
         break;
-		
-	  case 'e':
-	  	floor = atoi(argv[1]);
-	  	persons = atoi(argv[2]);
-	  	argCount++;
-	  	break;
-      
 	  default:
         testnum = 1;
         break;
@@ -115,12 +107,13 @@ int main(int argc, char **argv)
 #ifdef HW1_SEMAPHORES
     ThreadTest(testnum);
 #else
-    ThreadTest();   // Calls the default ThreadTest() otherwise
+	Ping();
+    //ThreadTest();   // Calls the default ThreadTest() otherwise
 #endif
 #endif
 
 #ifdef HW1_ELEVATOR
-    ElevatorTest(floor, persons);
+    ElevatorTest(4, 3);
 #endif
 
 

@@ -64,13 +64,14 @@ THREAD_C = ../threads/main.cc \
 	../machine/stats.cc \
 	../machine/timer.cc \
 	../threads/elevator.cc \
-	../threads/ElevatorTest.cc
+	../threads/ElevatorTest.cc\
+	../threads/ping.cc\
 
 THREAD_S = ../threads/switch.s
 
 THREAD_O = main.o list.o scheduler.o synch.o synchlist.o system.o thread.o \
 	utility.o threadtest.o interrupt.o stats.o sysdep.o timer.o \
-	elevator.o ElevatorTest.o
+	elevator.o ElevatorTest.o ping.o
 
 USERPROG_H = ../userprog/addrspace.h\
 	../userprog/bitmap.h\

@@ -3,7 +3,7 @@
 #include "elevator.h"
 #include <stdint.h>  // Ensures intptr_t is defined
 
-extern Elevator *e;
+Elevator *e = nullptr;  // Global Elevator instance
 int nextPersonID = 0; 
 Lock *nextPersonIDLock = new Lock("PersonIDLock");  
 
@@ -18,9 +18,9 @@ Elevator::Elevator(int floors) {
     elevatorLock = new Lock("ElevatorLock");
     elevatorCondition = new Condition("ElevatorCondition");
 
-    entering = new Condition*[numFloors];
-    leaving = new Condition*[numFloors];
-    personsWaiting = new int[numFloors];
+    entering = new Condition*[numFloors]();
+    leaving = new Condition*[numFloors]();
+    personsWaiting = new int[numFloors]();
 
     for (int i = 0; i < numFloors; i++) {
         entering[i] = new Condition("Entering Floor");
@@ -93,7 +93,11 @@ void Elevator::hailElevator(Person *p) {
 
 // Elevator Thread Function
 void ElevatorThread(int numFloors) {
-    printf(" Elevator with %d floors was created!\n", numFloors);
+    if (e != nullptr) {
+        printf("Elevator already initialized!\n");
+        return;
+    }
+    printf("Elevator with %d floors was created!\n", numFloors);
     e = new Elevator(numFloors);
     e->start();
 }
@@ -115,6 +119,10 @@ int getNextPersonID() {
 
 // Creates a New Person and Requests the Elevator
 void ArrivingGoingFromTo(int atFloor, int toFloor) {
+    if (atFloor <= 0 || toFloor <= 0 || atFloor > e->numFloors || toFloor > e->numFloors || atFloor == toFloor) {
+        printf("Invalid floor request: from %d to %d\n", atFloor, toFloor);
+        return;
+    }
     Person *p = new Person;
     p->id = getNextPersonID();
     p->atFloor = atFloor;
@@ -123,7 +131,7 @@ void ArrivingGoingFromTo(int atFloor, int toFloor) {
     char name[20];
     sprintf(name, "Person%d", p->id);
     Thread *t = new Thread(name);
-    t->Fork(PersonThread, p->id);
+    t->Fork(PersonThread, (intptr_t)p);
 }
 
 // Checks If There Are Any Pending Requests
@@ -132,4 +140,18 @@ bool Elevator::noPendingRequests() {
         if (personsWaiting[i] > 0) return false;
     }
     return true;
+}
+
+Elevator::~Elevator() {
+    delete elevatorLock;
+    delete elevatorCondition;
+
+    for (int i = 0; i < numFloors; i++) {
+        delete entering[i];
+        delete leaving[i];
+    }
+
+    delete[] entering;
+    delete[] leaving;
+    delete[] personsWaiting;
 }

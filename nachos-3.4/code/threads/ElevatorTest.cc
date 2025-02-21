@@ -6,7 +6,7 @@
 void ElevatorTest(int numFloors, int numPersons) {
 
     // Create elevator thread
-    Elevator(numFloors);
+    Elevator elevator(numFloors);  // Proper object creation
     int i;
     for ( i = 0 ; i < numPersons; i++) {
         int atFloor = (Random() % numFloors) + 1; // choose a random atFloor
