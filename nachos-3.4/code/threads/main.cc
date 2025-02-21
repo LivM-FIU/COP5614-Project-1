@@ -64,6 +64,7 @@ extern void ThreadTest(int n), Copy(char *unixFile, char *nachosFile);
 extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
+extern void ElevatorTest(int numFloors, int numPersons);
 
 //----------------------------------------------------------------------
 // main
@@ -79,11 +80,12 @@ extern void MailTest(int networkID);
 //		ex: "nachos -d +" -> argv = {"nachos", "-d", "+"}
 //----------------------------------------------------------------------
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int argCount;			// the number of arguments 
 					// for a particular command
+	int persons;
+	int floor;				
 
     DEBUG('t', "Entering main");
     (void) Initialize(argc, argv);
@@ -92,23 +94,35 @@ main(int argc, char **argv)
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;
       switch (argv[0][1]) {
-      case 'q':
+
+	  case 'q':
         testnum = atoi(argv[1]);
         argCount++;
         break;
-      default:
+		
+	  case 'e':
+	  	floor = atoi(argv[1]);
+	  	persons = atoi(argv[2]);
+	  	argCount++;
+	  	break;
+      
+	  default:
         testnum = 1;
         break;
       }
     }
-	#ifdef HW1_SEMAPHORES
+	
+#ifdef HW1_SEMAPHORES
     ThreadTest(testnum);
-	#else
+#else
     ThreadTest();   // Calls the default ThreadTest() otherwise
 #endif
-
-
 #endif
+
+#ifdef HW1_ELEVATOR
+    ElevatorTest(floor, persons);
+#endif
+
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
 	argCount = 1;
