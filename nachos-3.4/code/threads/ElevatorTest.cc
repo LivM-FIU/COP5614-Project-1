@@ -6,9 +6,9 @@
 void ElevatorTest(int numFloors, int numPersons) {
 
     // Create elevator thread
-    Elevator elevator(numFloors);  // Proper object creation
-    int i;
-    for ( i = 0 ; i < numPersons; i++) {
+    Elevator(numFloors);
+
+    for (int i = 0 ; i < numPersons; i++) {
         int atFloor = (Random() % numFloors) + 1; // choose a random atFloor
         int toFloor = -1 ;
         do {
@@ -17,7 +17,7 @@ void ElevatorTest(int numFloors, int numPersons) {
 
         ArrivingGoingFromTo(atFloor, toFloor);
 
-        for( i =0 ; i< 1000000; i++) {
+        for(int j =0 ; j< 1000000; j++) {
             currentThread->Yield();
         }
     }

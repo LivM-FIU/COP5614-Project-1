@@ -1,26 +1,38 @@
 #include "system.h"
 #include "synch.h"
 #include "elevator.h"
-#include <stdint.h>  // Ensures intptr_t is defined
 
-Elevator *e = nullptr;  // Global Elevator instance
-int nextPersonID = 0; 
-Lock *nextPersonIDLock = new Lock("PersonIDLock");  
+ELEVATOR *e;
+int nextPersonID = 1;
+Lock *personIDLock = new Lock("PersonIDLock");
+
+// Elevator Thread Function
+void ElevatorThread(int numFloors) {
+    printf("ELEVATOR with %d floors was created!\n", numFloors);
+    e = new ELEVATOR(numFloors);
+    e->start();
+}
+
+// Starts the Elevator Thread
+void Elevator(int numFloors) {
+    Thread *t = new Thread("ELEVATOR");
+    t->Fork((VoidFunctionPtr)ElevatorThread, numFloors);
+}
 
 // Elevator Constructor
-Elevator::Elevator(int floors) { 
-    this->numFloors = floors;
-    this->currentFloor = 1;
-    this->occupancy = 0;
-    this->maxOccupancy = 5;
+ELEVATOR::ELEVATOR(int floors) {
+    numFloors = floors;
+    currentFloor = 1;
+    direction = 1;  // Start moving up
+    occupancy = 0;
+    maxOccupancy = 5;
 
-    // Initialize synchronization variables
     elevatorLock = new Lock("ElevatorLock");
     elevatorCondition = new Condition("ElevatorCondition");
 
-    entering = new Condition*[numFloors]();
-    leaving = new Condition*[numFloors]();
-    personsWaiting = new int[numFloors]();
+    entering = new Condition*[numFloors];
+    leaving = new Condition*[numFloors];
+    personsWaiting = new int[numFloors];
 
     for (int i = 0; i < numFloors; i++) {
         entering[i] = new Condition("Entering Floor");
@@ -29,28 +41,53 @@ Elevator::Elevator(int floors) {
     }
 }
 
-// Elevator Start (Runs in a Thread)
-void Elevator::start() {
-    bool goingUp = true;
-
-    while (true) {
+void ELEVATOR::start() {
+    while (1) {
         elevatorLock->Acquire();
 
-        while (occupancy == 0 && noPendingRequests()) {
-            printf("Elevator is idle, waiting for a request...\n");
-            elevatorCondition->Wait(elevatorLock); 
-        }
-
+        bool hasPendingRequests = false;
         for (int i = 0; i < numFloors; i++) {
-            leaving[i]->Broadcast(elevatorLock);
-        }
-
-        for (int i = 0; i < numFloors; i++) {
-            while (personsWaiting[i] > 0 && occupancy < maxOccupancy) {
-                entering[i]->Signal(elevatorLock);
-                occupancy++;
-                personsWaiting[i]--;
+            if (personsWaiting[i] > 0) {
+                hasPendingRequests = true;
+                break;
             }
+        }
+
+        // **Fix: Don't stop immediately - instead, wait for requests**
+        if (occupancy == 0 && !hasPendingRequests) {
+            printf("No passengers in the elevator. Waiting for requests...\n");
+            elevatorCondition->Wait(elevatorLock);  // **Now it waits for passengers instead of stopping**
+        }
+
+        // **Re-check after waking up**
+        hasPendingRequests = false;
+        for (int i = 0; i < numFloors; i++) {
+            if (personsWaiting[i] > 0) {
+                hasPendingRequests = true;
+                break;
+            }
+        }
+
+        // **Now stop ONLY if there are no passengers and no pending requests**
+        if (occupancy == 0 && !hasPendingRequests) {
+            printf("All passengers have exited. Stopping the elevator.\n");
+            elevatorLock->Release();
+            break;
+        }
+
+        printf("Elevator at floor %d: Checking for passengers to exit...\n", currentFloor);
+        leaving[currentFloor - 1]->Broadcast(elevatorLock);
+
+        for (int j = 0; j < 20; j++) {
+            currentThread->Yield();
+        }
+
+        while (personsWaiting[currentFloor - 1] > 0 && occupancy < maxOccupancy) {
+            printf("Elevator picking up a passenger at floor %d.\n", currentFloor);
+            entering[currentFloor - 1]->Signal(elevatorLock);
+            occupancy++;
+            personsWaiting[currentFloor - 1]--;
+            currentThread->Yield();
         }
 
         elevatorLock->Release();
@@ -59,99 +96,89 @@ void Elevator::start() {
             currentThread->Yield();
         }
 
-        if (goingUp) {
-            if (currentFloor == numFloors) goingUp = false;
-            else currentFloor++;
-        } else {
-            if (currentFloor == 1) goingUp = true;
-            else currentFloor--;
+        elevatorLock->Acquire();
+        bool hasUpRequests = false, hasDownRequests = false;
+        for (int i = currentFloor; i < numFloors; i++) {
+            if (personsWaiting[i] > 0) {
+                hasUpRequests = true;
+                break;
+            }
+        }
+        for (int i = 0; i < currentFloor - 1; i++) {
+            if (personsWaiting[i] > 0) {
+                hasDownRequests = true;
+                break;
+            }
         }
 
-        printf("Elevator arrives at floor %d\n", currentFloor);
+        if (!hasUpRequests && hasDownRequests) {
+            direction = -1;
+        } else if (hasUpRequests) {
+            direction = 1;
+        } else {
+            direction = 0;
+        }
+
+        if (direction == 1 && currentFloor < numFloors) {
+            currentFloor++;
+        } else if (direction == -1 && currentFloor > 1) {
+            currentFloor--;
+        } else if (direction == 0) {
+            printf("All requests handled. Stopping elevator.\n");
+            elevatorLock->Release();
+            break;
+        }
+
+        printf("Elevator arrives on floor %d\n", currentFloor);
+        elevatorLock->Release();
+        currentThread->Yield();
     }
+
+    printf("Elevator has stopped. No more passengers.\n");
 }
 
-// Handles a Passenger Requesting an Elevator Ride
-void Elevator::hailElevator(Person *p) {
-    elevatorLock->Acquire();
 
+// Passenger Requests an Elevator Ride
+void ELEVATOR::hailElevator(Person *p) {
+    elevatorLock->Acquire();
     printf("Person %d is waiting on floor %d.\n", p->id, p->atFloor);
     personsWaiting[p->atFloor - 1]++;
-    elevatorCondition->Signal(elevatorLock); // Fixed missing variable
 
+    elevatorCondition->Broadcast(elevatorLock);
     entering[p->atFloor - 1]->Wait(elevatorLock);
-    printf("Person %d got into the elevator.\n", p->id);
 
+    printf("Person %d got into the elevator.\n", p->id);
     occupancy++;
 
     leaving[p->toFloor - 1]->Wait(elevatorLock);
     occupancy--;
 
-    printf("Person %d got out of the elevator.\n", p->id);
     elevatorLock->Release();
+    printf("Person %d got out of the elevator.\n", p->id);
 }
 
-// Elevator Thread Function
-void ElevatorThread(int numFloors) {
-    if (e != nullptr) {
-        printf("Elevator already initialized!\n");
-        return;
-    }
-    printf("Elevator with %d floors was created!\n", numFloors);
-    e = new Elevator(numFloors);
-    e->start();
-}
-
-// Person Thread Function
-void PersonThread(intptr_t personPtr) {
-    Person *p = (Person *)personPtr;
-    printf("👤 Person %d wants to go from floor %d to %d\n", p->id, p->atFloor, p->toFloor);
+// Person Thread
+void PersonThread(int person) {
+    Person *p = (Person *)person;
+    printf("Person %d wants to go from floor %d to floor %d\n", p->id, p->atFloor, p->toFloor);
     e->hailElevator(p);
 }
 
-// Generates a Unique ID for Each Person
+// Generates Unique ID for Person
 int getNextPersonID() {
-    nextPersonIDLock->Acquire();
+    personIDLock->Acquire();
     int personID = nextPersonID++;
-    nextPersonIDLock->Release();
+    personIDLock->Release();
     return personID;
 }
 
-// Creates a New Person and Requests the Elevator
+// Creates a New Passenger Thread
 void ArrivingGoingFromTo(int atFloor, int toFloor) {
-    if (atFloor <= 0 || toFloor <= 0 || atFloor > e->numFloors || toFloor > e->numFloors || atFloor == toFloor) {
-        printf("Invalid floor request: from %d to %d\n", atFloor, toFloor);
-        return;
-    }
     Person *p = new Person;
     p->id = getNextPersonID();
     p->atFloor = atFloor;
     p->toFloor = toFloor;
 
-    char name[20];
-    sprintf(name, "Person%d", p->id);
-    Thread *t = new Thread(name);
-    t->Fork(PersonThread, (intptr_t)p);
-}
-
-// Checks If There Are Any Pending Requests
-bool Elevator::noPendingRequests() {
-    for (int i = 0; i < numFloors; i++) {
-        if (personsWaiting[i] > 0) return false;
-    }
-    return true;
-}
-
-Elevator::~Elevator() {
-    delete elevatorLock;
-    delete elevatorCondition;
-
-    for (int i = 0; i < numFloors; i++) {
-        delete entering[i];
-        delete leaving[i];
-    }
-
-    delete[] entering;
-    delete[] leaving;
-    delete[] personsWaiting;
+    Thread *t = new Thread("Person");
+    t->Fork(PersonThread, (int)p);
 }

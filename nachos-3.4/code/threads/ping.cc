@@ -11,7 +11,7 @@ Condition *cv;
 void
 PingPong(int which)
 {
-    char *msg = (char *) which;
+    const char *msg = (const char *) which;
     int i;
 
     pingLock->Acquire();
@@ -25,6 +25,8 @@ PingPong(int which)
 
 void Ping()
 {
+   printf(" ping pong Condition Locks\n");
+
     pingLock = new Lock("cv");
     cv = new Condition("ping pong");
 

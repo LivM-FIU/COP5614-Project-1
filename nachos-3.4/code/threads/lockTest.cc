@@ -34,7 +34,8 @@ void LockT(int number)
 }
 
 void LockTest()
-{
+{       printf(" Lock test with threads\n");
+
     // Fork other threads
     for (int i = 1; i <= 3; i++)
     {

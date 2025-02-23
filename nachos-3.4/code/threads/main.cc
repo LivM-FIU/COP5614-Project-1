@@ -67,6 +67,7 @@ extern void MailTest(int networkID);
 extern void ElevatorTest(int numFloors, int numPersons);
 extern void Ping(void);
 extern void LockTest(void);
+extern void SemaphorePing(void);
 
 //----------------------------------------------------------------------
 // main
@@ -90,34 +91,45 @@ int main(int argc, char **argv)
     DEBUG('t', "Entering main");
     (void) Initialize(argc, argv);
     
-#ifdef THREADS
+	#ifdef THREADS
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
-      argCount = 1;
-      switch (argv[0][1]) {
-
-	  case 'q':
-        testnum = atoi(argv[1]);
-        argCount++;
-        break;
-	  default:
-        testnum = 1;
-        break;
-      }
+        argCount = 1;
+        switch (argv[0][1]) {
+            case 'q':
+                testnum = atoi(argv[1]);
+                argCount++;
+                break;
+            default:
+                testnum = 1;
+                break;
+        }
     }
-	
-#ifdef HW1_SEMAPHORES
-    ThreadTest(testnum);
-#else
-	// Ping();
-	LockTest();
-    //ThreadTest();   // Calls the default ThreadTest() otherwise
-#endif
-#endif
 
-#ifdef HW1_ELEVATOR
-    ElevatorTest(4, 3);
-#endif
+	// Enable synchronization tests based on preprocessor flags
+	#ifdef HW1_SEMAPHORES
+	SemaphorePing();  // Runs the semaphore-based ping test
+	ThreadTest(testnum);
+	#endif
 
+	#ifdef HW1_LOCKS
+	Ping();
+	LockTest();  // Runs the lock synchronization test
+	#endif
+
+	#ifdef HW1_ELEVATOR
+	ElevatorTest(5, 3);  // Runs the elevator simulation
+	#endif
+
+	#ifndef HW1_SEMAPHORES
+	#ifndef HW1_LOCKS
+	#ifndef HW1_ELEVATOR
+
+	ThreadTest();  // Runs the default thread test if no specific test is selected
+	#endif
+	#endif
+	#endif
+
+#endif // THREADS
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
 	argCount = 1;
