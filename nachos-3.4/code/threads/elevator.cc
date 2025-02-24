@@ -45,45 +45,47 @@ void ELEVATOR::start() {
     while (1) {
         elevatorLock->Acquire();
 
+        printf("🚀 DEBUG: Elevator at floor %d. Checking for passengers...\n", currentFloor);
+
+        // ✅ Ensure elevator waits if there are no passengers inside and no new requests.
         bool hasPendingRequests = false;
         for (int i = 0; i < numFloors; i++) {
             if (personsWaiting[i] > 0) {
                 hasPendingRequests = true;
-                break;
             }
         }
 
-        // **Fix: Don't stop immediately - instead, wait for requests**
         if (occupancy == 0 && !hasPendingRequests) {
-            printf("No passengers in the elevator. Waiting for requests...\n");
-            elevatorCondition->Wait(elevatorLock);  // **Now it waits for passengers instead of stopping**
-        }
+            printf("🛑 DEBUG: No passengers inside & no requests. Waiting for requests...\n");
+            elevatorCondition->Wait(elevatorLock);
 
-        // **Re-check after waking up**
-        hasPendingRequests = false;
-        for (int i = 0; i < numFloors; i++) {
-            if (personsWaiting[i] > 0) {
-                hasPendingRequests = true;
-                break;
+            // ✅ Check for new requests again after waking up
+            hasPendingRequests = false;
+            for (int i = 0; i < numFloors; i++) {
+                if (personsWaiting[i] > 0) {
+                    hasPendingRequests = true;
+                    currentThread->Yield();
+
+                }
+            }
+
+            if (occupancy == 0 && !hasPendingRequests) {
+                printf("🛑 DEBUG: No more passengers. Stopping the ELEVATOR.\n");
+                elevatorLock->Release();
             }
         }
 
-        // **Now stop ONLY if there are no passengers and no pending requests**
-        if (occupancy == 0 && !hasPendingRequests) {
-            printf("All passengers have exited. Stopping the elevator.\n");
-            elevatorLock->Release();
-            break;
-        }
-
-        printf("Elevator at floor %d: Checking for passengers to exit...\n", currentFloor);
+        printf("🔄 DEBUG: Elevator at floor %d: Checking for passengers to exit...\n", currentFloor);
         leaving[currentFloor - 1]->Broadcast(elevatorLock);
 
         for (int j = 0; j < 20; j++) {
             currentThread->Yield();
         }
 
+        printf("🚦 DEBUG: Checking if there are new passengers at floor %d...\n", currentFloor);
         while (personsWaiting[currentFloor - 1] > 0 && occupancy < maxOccupancy) {
-            printf("Elevator picking up a passenger at floor %d.\n", currentFloor);
+            printf("✅ DEBUG: Elevator picking up a passenger at floor %d.\n", currentFloor);
+            
             entering[currentFloor - 1]->Signal(elevatorLock);
             occupancy++;
             personsWaiting[currentFloor - 1]--;
@@ -96,65 +98,56 @@ void ELEVATOR::start() {
             currentThread->Yield();
         }
 
+        // ✅ Check for new requests before moving
         elevatorLock->Acquire();
-        bool hasUpRequests = false, hasDownRequests = false;
-        for (int i = currentFloor; i < numFloors; i++) {
+        hasPendingRequests = false;
+        for (int i = 0; i < numFloors; i++) {
             if (personsWaiting[i] > 0) {
-                hasUpRequests = true;
-                break;
-            }
-        }
-        for (int i = 0; i < currentFloor - 1; i++) {
-            if (personsWaiting[i] > 0) {
-                hasDownRequests = true;
+                hasPendingRequests = true;
                 break;
             }
         }
 
-        if (!hasUpRequests && hasDownRequests) {
-            direction = -1;
-        } else if (hasUpRequests) {
-            direction = 1;
-        } else {
-            direction = 0;
+        // ✅ Don't move if new requests arrived
+        if (hasPendingRequests) {
+            printf("🚨 DEBUG: New passenger requests detected. Elevator will not stop.\n");
         }
 
-        if (direction == 1 && currentFloor < numFloors) {
-            currentFloor++;
-        } else if (direction == -1 && currentFloor > 1) {
-            currentFloor--;
-        } else if (direction == 0) {
-            printf("All requests handled. Stopping elevator.\n");
-            elevatorLock->Release();
-            break;
+        if (occupancy > 0 || hasPendingRequests) {
+            if (currentFloor < numFloors) {
+                currentFloor++;
+            } else {
+                currentFloor = 1;
+            }
+            printf("📍 DEBUG: ELEVATOR arrives on floor %d\n", currentFloor);
         }
-
-        printf("Elevator arrives on floor %d\n", currentFloor);
         elevatorLock->Release();
-        currentThread->Yield();
     }
 
-    printf("Elevator has stopped. No more passengers.\n");
+    printf("🛑 DEBUG: ELEVATOR has stopped. No more passengers.\n");
 }
 
 
 // Passenger Requests an Elevator Ride
 void ELEVATOR::hailElevator(Person *p) {
     elevatorLock->Acquire();
-    printf("Person %d is waiting on floor %d.\n", p->id, p->atFloor);
+    printf("🆕 DEBUG: Person %d is waiting on floor %d.\n", p->id, p->atFloor);
     personsWaiting[p->atFloor - 1]++;
 
-    elevatorCondition->Broadcast(elevatorLock);
+    // ✅ Ensure the elevator wakes up immediately when a new person arrives
+    printf("🔔 DEBUG: Person %d is waking up the elevator!\n", p->id);
+    elevatorCondition->Signal(elevatorLock);
+
     entering[p->atFloor - 1]->Wait(elevatorLock);
 
-    printf("Person %d got into the elevator.\n", p->id);
+    printf("🚪 DEBUG: Person %d got into the ELEVATOR.\n", p->id);
     occupancy++;
 
     leaving[p->toFloor - 1]->Wait(elevatorLock);
     occupancy--;
 
     elevatorLock->Release();
-    printf("Person %d got out of the elevator.\n", p->id);
+    printf("🏁 DEBUG: Person %d got out of the ELEVATOR.\n", p->id);
 }
 
 // Person Thread
