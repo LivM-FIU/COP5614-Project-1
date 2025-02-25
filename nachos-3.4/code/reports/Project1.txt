@@ -61,5 +61,5 @@ Machine halting!
 
 
 Problem that we faced:
-Based on the output, The elevator correctly moves up, but after it reaches the highest floor (floor 4), it needs to go down to handle requests from the lower floors, including dropping off person 4. The current issue is that while the elevator goes up, it does not handle the requests on its way back down. It should first go down to drop off the person at floor 4, and in the process, it should also check for and handle any new requests on the way down.
+Based on the output, the current issue is that the elevator continuously loops through every floor rather than stopping only when a passenger needs to be dropped off. Although it now correctly handles dropping off people, it does not efficiently determine when to stop, leading to unnecessary floor checks instead of halting precisely at the required destinations.
 
