@@ -1,0 +1,65 @@
+Project 1
+
+Students:
+Livan Miranda, Shamim Golafshan, Trinity Socorro(Group1)
+
+
+#Question 1
+Implemented successfully, tested, and outputs as expected.
+
+#Question 2
+Implemented successfully, synchronized counter with no race conditions.
+
+#Question 3
+Implemented successfully and the output was as expected.
+
+#Question 4
+Implementation Overview
+To achieve the goal of this question, we made several key modifications to the Professor's Code on github:
+
+Elevator Implementation Key Modifications
+
+Elevator Thread Initialization:
+-Professor's Code: The professor's code provides the ElevatorThread function, which is responsible for creating the elevator object and calling its start() function.
+-Our Code: The code follows the same structure as the professor’s code to create the elevator thread and start the elevator. No major changes were made in this section.
+
+Elevator Movement and Passenger Handling:
+-Professor's Code: The code mentions the general movement of the elevator, checking for passengers, and going to the next floor. It also includes checking if there are active passengers or requests.
+-Our Code: We explicitly added more detailed logic to check for requests and handle passenger pickup and drop off efficiently, so that the elevator only moves for pending requests or if it is occupied. Yet, it does not work as intended, with the elevator failing to descend floors after picking up the first passenger. Despite testing different methods to fix this issue, the output remains the same. Some testing including changing the passenger handling to a while loop, and isolating where the occupancy counter is changed to hailElevator, unfortunately it continued to output incorrectly. 
+
+
+Synchronization with Locks and Conditions:
+-Professor's Code: The professor's code uses elevatorLock and condition variables (entering[] and leaving[]) for synchronization.
+-Our Code: We used the same approach, adding a more thorough management of waiting passengers. Passengers are picked up and dropped off with synchronization to ensure that the elevator doesn't pick up more passengers than its capacity.
+
+Passenger Request Handling:
+-Professor's Code: The professor’s code handles the basic structure of a passenger requesting an elevator ride, signaling when they are ready and waiting for the elevator to arrive at their floor.
+-Our Code: We implemented the hailElevator() function that properly manages passenger requests. This function adds passengers to the waiting list, signals the elevator to wake up, and waits for the elevator to pick them up.
+
+Passenger Thread and ID Generation:
+-Professor's Code: The professor's code generates a new PersonThread for each passenger and assigns them a unique ID.
+-Our Code: We followed the same structure, generating a unique ID for each passenger, creating a new Thread for each passenger, and calling hailElevator() to request a ride.
+
+
+OutPut:
+The following output was generated using our code:
+
+
+ELEVATOR with 5 floors was created!
+🚀 DEBUG: Elevator at floor 1. Checking for passengers...
+🛑 DEBUG: No passengers inside & no requests. Waiting for requests...
+Person 1 wants to go from floor 4 to floor 2
+🆕 DEBUG: Person 1 is waiting on floor 4.
+🔔 DEBUG: Person 1 is waking up the elevator!
+...
+✅ DEBUG: Elevator picking up a passenger at floor 4.
+Person 2 wants to go from floor 3 to floor 1
+Person 3 wants to go from floor 4 to floor 1
+No threads ready or runnable, and no pending interrupts.
+Assuming the program completed.
+Machine halting!
+
+
+Problem that we faced:
+Based on the output, The elevator correctly moves up, but after it reaches the highest floor (floor 4), it needs to go down to handle requests from the lower floors, including dropping off person 4. The current issue is that while the elevator goes up, it does not handle the requests on its way back down. It should first go down to drop off the person at floor 4, and in the process, it should also check for and handle any new requests on the way down.
+
