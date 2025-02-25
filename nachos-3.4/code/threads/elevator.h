@@ -8,6 +8,7 @@
 void Elevator(int numFloors);
 void ArrivingGoingFromTo(int atFloor, int toFloor);
 
+
 // Person Structure
 struct Person {
     int id;
@@ -16,13 +17,14 @@ struct Person {
 };
 
 // Elevator Class
-class ELEVATOR { 
+class ELEVATOR {
 public:
-    ELEVATOR(int floors);
+    ELEVATOR(int numFloors);
     ~ELEVATOR();
 
     void hailElevator(Person *p);
     void start();
+    bool anyPersonsWaiting();
 
 private:
     int numFloors;
@@ -30,9 +32,10 @@ private:
     int direction;
     int occupancy;
     int maxOccupancy;
+    int activePassengers; // Track active passengers
     Lock *elevatorLock;
 
-    Condition *elevatorCondition; 
+    Condition *elevatorCondition;
     Condition **entering;
     Condition **leaving;
     int *personsWaiting;
