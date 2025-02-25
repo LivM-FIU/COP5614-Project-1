@@ -33,7 +33,6 @@ void ELEVATOR::start() {
         while (personsWaiting[currentFloor - 1] > 0 && occupancy < maxOccupancy) {
             entering[currentFloor - 1]->Signal(elevatorLock); // Lock is held here
             personsWaiting[currentFloor - 1]--;
-            occupancy++;
         }
 
         // 2.5 Release elevatorLock
@@ -57,7 +56,9 @@ void ELEVATOR::start() {
             direction = 1;
             currentFloor++;
         }
+        if(occupancy != 0 ){
         printf("Elevator arrives on floor %d\n", currentFloor);
+        }
         elevatorLock->Release();
     }
 }
@@ -129,6 +130,10 @@ void ELEVATOR::hailElevator(Person *p) {
 
     printf("Person %d got out of the elevator.\n", p->id);
     occupancy--;
+    if(occupancy == 0){
+        printf("Elevator Stops.\n");
+        elevatorCondition->Wait(elevatorLock);
+    }
 
     elevatorLock->Release();
 }
