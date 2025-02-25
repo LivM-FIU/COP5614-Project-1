@@ -45,19 +45,46 @@ OutPut:
 The following output was generated using our code:
 
 
-ELEVATOR with 5 floors was created!
-🚀 DEBUG: Elevator at floor 1. Checking for passengers...
-🛑 DEBUG: No passengers inside & no requests. Waiting for requests...
-Person 1 wants to go from floor 4 to floor 2
-🆕 DEBUG: Person 1 is waiting on floor 4.
-🔔 DEBUG: Person 1 is waking up the elevator!
-...
-✅ DEBUG: Elevator picking up a passenger at floor 4.
-Person 2 wants to go from floor 3 to floor 1
-Person 3 wants to go from floor 4 to floor 1
-No threads ready or runnable, and no pending interrupts.
-Assuming the program completed.
-Machine halting!
+Elevator with 5 floors was created!
+Person 1 wants to go from floor 4 to 2
+Person 2 wants to go from floor 3 to 1
+Elevator arrives on floor 2
+Person 3 wants to go from floor 4 to 1
+Elevator arrives on floor 3
+Person 2 got into the elevator.
+Elevator arrives on floor 4
+Person 1 got into the elevator.
+Person 3 got into the elevator.
+Elevator arrives on floor 5
+Elevator arrives on floor 4
+Elevator arrives on floor 3
+Elevator arrives on floor 2
+Person 1 got out of the elevator.
+Elevator arrives on floor 1
+Person 2 got out of the elevator.
+Person 3 got out of the elevator.
+Elevator arrives on floor 2
+Elevator arrives on floor 3
+Elevator arrives on floor 4
+Elevator arrives on floor 5
+Elevator arrives on floor 4
+Elevator arrives on floor 3
+Elevator arrives on floor 2
+Elevator arrives on floor 1
+Elevator arrives on floor 2
+Elevator arrives on floor 3
+Elevator arrives on floor 4
+Elevator arrives on floor 5
+Elevator arrives on floor 4
+Elevator arrives on floor 3
+Elevator arrives on floor 2
+Elevator arrives on floor 1
+Elevator arrives on floor 2
+Elevator arrives on floor 3
+Elevator arrives on floor 4
+Elevator arrives on floor 5
+^C
+Cleaning up...
 
 
 Problem that we faced:
